@@ -11,6 +11,7 @@ class JokeViewModel : ViewModel() {
     private val jokeRemote = JokeRemote()
     val jokeLiveData = MutableLiveData<JokeUiData>()
     val loadingLiveData = MutableLiveData<Boolean>()
+    val categoriesLiveData = MutableLiveData<List<String>>()
     private var index = 0
     private val jokeList = mutableListOf<JokeUiData>()
 
@@ -36,6 +37,14 @@ class JokeViewModel : ViewModel() {
         }
 
         jokeLiveData.value = jokeList[index]
+    }
+
+    fun loadCategories() = CoroutineScope(Dispatchers.Main).launch {
+        if (categoriesLiveData.value != null) return@launch
+
+        val categories = ArrayList(jokeRemote.getCategories().await())
+        categories.add(0, "unknown")
+        categoriesLiveData.value = categories
     }
 
     private suspend fun loadNextJokes(category: String? = null): List<JokeUiData> {

@@ -28,13 +28,27 @@
 
                 <ImageView
                     android:id="@+id/logoImage"
-                    android:layout_width="152dp"
-                    android:layout_height="152dp"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     tools:ignore="ContentDescription"
                     tools:src="@drawable/ic_launcher_foreground" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/categoryFilterRecycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    tools:itemCount="2"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/logoImage"
+                    tools:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/category_filter_item" />
 
                 <View
                     android:id="@+id/tipView"
@@ -49,7 +63,7 @@
                     android:id="@+id/jokeText"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="16dp"
                     android:background="@color/windowBackgroundDark"
                     android:paddingStart="16dp"
                     android:paddingTop="8dp"
@@ -60,27 +74,28 @@
                     android:textStyle="italic"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/tipView"
-                    app:layout_constraintTop_toBottomOf="@id/logoImage"
+                    app:layout_constraintTop_toBottomOf="@id/categoryFilterRecycler"
                     tools:text="Chuck Norris was the Fourth Wiseman. He gave Baby Jesus the gift of Beard. Jesus loved it so much the other Wisemen were jealous of his obvious gift favoritism. They then used their combined influence to have Chuck Norris omitted from the Bible. All three later died mysteriously from roundhouse-kick related issues." />
 
                 <TextView
                     android:id="@+id/categoryText"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:textColor="@android:color/secondary_text_dark"
                     android:layout_marginEnd="8dp"
                     android:layout_marginBottom="8dp"
                     android:background="@color/windowBackgroundDark"
+                    android:paddingStart="16dp"
                     android:paddingTop="8dp"
-                    android:textStyle="italic"
+                    android:paddingEnd="16dp"
                     android:paddingBottom="8dp"
+                    android:textColor="@android:color/secondary_text_dark"
+                    android:textStyle="italic"
                     android:visibility="gone"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/tipView"
                     app:layout_constraintTop_toBottomOf="@id/jokeText"
+                    app:textOrGone="@{jokeUi.category}"
                     tools:text="Sport"
                     tools:visibility="visible" />
 

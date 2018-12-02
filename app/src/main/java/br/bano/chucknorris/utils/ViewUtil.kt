@@ -2,10 +2,12 @@ package br.bano.chucknorris.utils
 
 import android.view.View
 
-fun View.gone() {
+fun View.gone(): View {
     this.visibility = View.GONE
+    return this
 }
 
-fun View.visible() {
+fun View.visible(): View {
     this.visibility = View.VISIBLE
+    return this
 }

@@ -27,4 +27,8 @@ class JokeRemote {
     fun getJoke(category: String?): Deferred<Joke> {
         return service.getJoke(category)
     }
+
+    fun getCategories(): Deferred<List<String>> {
+        return service.getCategories()
+    }
 }

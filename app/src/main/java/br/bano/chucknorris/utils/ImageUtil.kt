@@ -2,6 +2,7 @@ package br.bano.chucknorris.utils
 
 import android.app.Activity
 import android.widget.ImageView
+import androidx.databinding.BindingAdapter
 import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
 

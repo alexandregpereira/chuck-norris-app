@@ -9,4 +9,7 @@ interface JokeApi {
 
     @GET("jokes/random")
     fun getJoke(@Query("category") category: String?): Deferred<Joke>
+
+    @GET("jokes/categories")
+    fun getCategories(): Deferred<List<String>>
 }

@@ -5,15 +5,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import br.bano.chucknorris.R
+import br.bano.chucknorris.databinding.CategoriesDialogBinding
 import br.bano.chucknorris.databinding.JokeFragmentBinding
-import br.bano.chucknorris.utils.goneIfMissing
+import br.bano.chucknorris.ui.joke.CategoryFilterAdapter.Companion.ADD_ID
+import br.bano.chucknorris.utils.createDialog
 import br.bano.chucknorris.utils.loadImageUrl
-import br.bano.chucknorris.utils.setTextOrGone
 
 class JokeFragment : Fragment() {
 
@@ -35,7 +39,6 @@ class JokeFragment : Fragment() {
     }
 
     private fun init() = binding.apply {
-
         nextButton.setOnClickListener { viewModel.loadJoke() }
         previousButton.setOnClickListener { viewModel.loadJoke(previousJoke = true) }
 
@@ -44,7 +47,11 @@ class JokeFragment : Fragment() {
         viewModel.jokeLiveData.observe(this@JokeFragment, Observer { joke ->
             if (joke == null) return@Observer
             jokeUi = joke
-            categoryText.setTextOrGone(joke.category)
+        })
+
+        viewModel.categoriesLiveData.observe(this@JokeFragment, Observer { categories ->
+            if (categories == null) return@Observer
+            buildCategoryRecyclerView(categoryFilterRecycler, categories)
         })
 
         val animation = AnimationUtils.loadAnimation(context, R.anim.next)
@@ -54,7 +61,63 @@ class JokeFragment : Fragment() {
             else nextButton.clearAnimation()
         })
 
+        viewModel.loadCategories()
         viewModel.loadJoke()
+    }
+
+    private fun buildCategoryRecyclerView(categoryFilterRecycler: RecyclerView, categories: List<String>) = categoryFilterRecycler.apply {
+        if (categories.isEmpty()) return@apply
+        setHasFixedSize(true)
+        layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        adapter = CategoryFilterAdapter(mutableListOf(
+                CategoryFilterAdapter.CategoryFilterItem(
+                        "unknown"
+                ),
+                CategoryFilterAdapter.CategoryFilterItem(
+                        getString(R.string.categories),
+                        ADD_ID
+                )
+        )) {
+            onCategoryFilterClicked(it, categories)
+        }
+    }
+
+    private fun onCategoryFilterClicked(categoryFilter: CategoryFilterAdapter.CategoryFilterItem, categories: List<String>) {
+        if (categoryFilter.id == ADD_ID) {
+            val dialogPair = context?.createDialog<CategoriesDialogBinding>(R.layout.categories_dialog)
+            val dialog = dialogPair?.first
+            val dialogBinding = dialogPair?.second
+
+            dialogBinding?.categoriesRecycler.apply recyclerApply@{
+                if (this == null) return@recyclerApply
+                setHasFixedSize(true)
+                layoutManager = LinearLayoutManager(context)
+                adapter = CategoryDialogAdapter(categories) { category ->
+                    dialog?.dismiss()
+                    addCategoryFilter(category)
+                }
+            }
+
+            dialog?.show()
+
+            return
+        }
+
+        removeCategoryFilter(categoryFilter)
+    }
+
+    private fun removeCategoryFilter(categoryFilter: CategoryFilterAdapter.CategoryFilterItem) {
+        val adapter = binding.categoryFilterRecycler.adapter as CategoryFilterAdapter
+        if (adapter.itemCount == 2) {
+            Toast.makeText(context, R.string.category_filter_remove_warning, Toast.LENGTH_LONG).show()
+            return
+        }
+        adapter.remove(categoryFilter)
+    }
+
+    private fun addCategoryFilter(category: String) {
+        val adapter = binding.categoryFilterRecycler.adapter as CategoryFilterAdapter
+        adapter.setItemAtIndex(0, CategoryFilterAdapter.CategoryFilterItem(category))
     }
 
     companion object {

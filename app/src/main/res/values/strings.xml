@@ -2,4 +2,6 @@
     <string name="app_name">Chuck Norris</string>
     <string name="next">Próximo</string>
     <string name="previous">Anterior</string>
+    <string name="categories">Categorias</string>
+    <string name="category_filter_remove_warning">Não é possível remover todas as categorias</string>
 </resources>
