@@ -11,16 +11,12 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import br.bano.chucknorris.R
 import br.bano.chucknorris.databinding.JokeFragmentBinding
+import br.bano.chucknorris.utils.goneIfMissing
 import br.bano.chucknorris.utils.loadImageUrl
-import br.bano.chucknorris.utils.setTextOrGone
 
 class JokeFragment : Fragment() {
 
     private lateinit var binding: JokeFragmentBinding
-
-    private val category: String? by lazy {
-        arguments?.getString(CATEGORY_KEY)
-    }
 
     private val viewModel: JokeViewModel by lazy {
         ViewModelProviders.of(this).get(JokeViewModel::class.java)
@@ -48,23 +44,13 @@ class JokeFragment : Fragment() {
         viewModel.jokeLiveData.observe(this@JokeFragment, Observer { joke ->
             if (joke == null) return@Observer
             jokeUi = joke
-            categoryText.setTextOrGone(category)
+            categoryText.goneIfMissing()
         })
 
-        viewModel.loadJoke(category)
+        viewModel.loadJoke()
     }
 
     companion object {
-        private const val CATEGORY_KEY = "CATEGORY_KEY"
-
         fun newInstance() = JokeFragment()
-
-        fun newInstance(category: String): JokeFragment {
-            val jokeFragment = JokeFragment()
-            val args = Bundle()
-            args.putString(CATEGORY_KEY, category)
-            jokeFragment.arguments = args
-            return jokeFragment
-        }
     }
 }

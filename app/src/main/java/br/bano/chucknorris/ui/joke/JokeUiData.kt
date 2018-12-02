@@ -2,7 +2,8 @@ package br.bano.chucknorris.ui.joke
 
 class JokeUiData(
         val id: String,
-        val joke: String
+        val joke: String,
+        val category: String?
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

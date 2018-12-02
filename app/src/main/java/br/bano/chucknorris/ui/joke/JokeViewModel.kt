@@ -2,27 +2,30 @@ package br.bano.chucknorris.ui.joke
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.*
+import br.bano.chucknorris.data.joke.JokeRemote
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class JokeViewModel : ViewModel() {
 
+    private val jokeRemote = JokeRemote()
     val jokeLiveData = MutableLiveData<JokeUiData>()
-    val loadingLiveData = MutableLiveData<Boolean>()
 
-    fun loadJoke(category: String?) = CoroutineScope(Dispatchers.Main).launch {
-        loadingLiveData.value = true
-        jokeLiveData.value = getJoke()
-        loadingLiveData.value = false
+    fun loadJoke(category: String? = null) = CoroutineScope(Dispatchers.Main).launch {
+        jokeLiveData.value = getJoke(category)
     }
 
-    private suspend fun getJoke(): JokeUiData {
-        return withContext(Dispatchers.Default) {
-            delay(2000)
+    private suspend fun getJoke(category: String?): JokeUiData = withContext(Dispatchers.Main) {
+        val joke = jokeRemote.getJoke(category)
+        val categories = joke.category
+        val value = joke.value
 
-            JokeUiData(
-                "id",
-                "\" Chuck Norris was the Fourth Wiseman. He gave Baby Jesus the gift of Beard. Jesus loved it so much the other Wisemen were jealous of his obvious gift favoritism. They then used their combined influence to have Chuck Norris omitted from the Bible. All three later died mysteriously from roundhouse-kick related issues."
-            )
-        }
+        JokeUiData(
+            joke.id ?: "",
+            if (value != null) "\" $value" else "",
+            categories?.joinToString()
+        )
     }
 }
