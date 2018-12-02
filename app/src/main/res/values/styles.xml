@@ -8,13 +8,9 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="NextButton" parent="Widget.AppCompat.Button">
-        <item name="android:background">@android:color/transparent</item>
-        <item name="android:text">@string/next</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:drawablePadding">-20dp</item>
+    <style name="Button" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/selector_button</item>
         <item name="android:textColor">@color/colorAccent</item>
-        <item name="android:drawableBottom">@drawable/ic_next</item>
     </style>
 
 </resources>

@@ -13,6 +13,7 @@ import br.bano.chucknorris.R
 import br.bano.chucknorris.databinding.JokeFragmentBinding
 import br.bano.chucknorris.utils.goneIfMissing
 import br.bano.chucknorris.utils.loadImageUrl
+import br.bano.chucknorris.utils.setTextOrGone
 
 class JokeFragment : Fragment() {
 
@@ -34,17 +35,23 @@ class JokeFragment : Fragment() {
     }
 
     private fun init() = binding.apply {
-        nextButton.apply {
-            val animation = AnimationUtils.loadAnimation(context, R.anim.next)
-            startAnimation(animation)
-        }
+
+        nextButton.setOnClickListener { viewModel.loadJoke() }
+        previousButton.setOnClickListener { viewModel.loadJoke(previousJoke = true) }
 
         logoImage.loadImageUrl(JokeUiData.ICON_URL)
 
         viewModel.jokeLiveData.observe(this@JokeFragment, Observer { joke ->
             if (joke == null) return@Observer
             jokeUi = joke
-            categoryText.goneIfMissing()
+            categoryText.setTextOrGone(joke.category)
+        })
+
+        val animation = AnimationUtils.loadAnimation(context, R.anim.next)
+        viewModel.loadingLiveData.observe(this@JokeFragment, Observer { loading ->
+            if (loading == null) return@Observer
+            if (loading) nextButton.startAnimation(animation)
+            else nextButton.clearAnimation()
         })
 
         viewModel.loadJoke()
