@@ -25,6 +25,8 @@ class JokeViewModel : ViewModel() {
             return@launch
         }
 
+        if (index == jokeList.size - 1) return@launch
+
         if (!jokeList.isEmpty()) ++index
 
         if (index > jokeList.size - 3) {
