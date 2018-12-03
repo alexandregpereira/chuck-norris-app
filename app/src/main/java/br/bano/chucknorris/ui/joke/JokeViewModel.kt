@@ -16,7 +16,7 @@ import java.util.*
 class JokeViewModel : ViewModel() {
 
     private val unknownCategory = "unknown"
-    private val rangeCallTotal = 3
+    private val rangeCallTotal = 4
 
     private val jokeRemote = JokeRemote()
 
@@ -70,7 +70,7 @@ class JokeViewModel : ViewModel() {
     }
 
     private suspend fun loadNextJokes(): Boolean {
-        if (index > jokeList.size - 1) {
+        if (index >= jokeList.size - 2) {
             loadingLiveData.value = true
             jokeList.addAll(getNextJokes())
             loadingLiveData.value = false
