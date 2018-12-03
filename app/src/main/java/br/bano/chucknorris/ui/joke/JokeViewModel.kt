@@ -74,7 +74,8 @@ class JokeViewModel : ViewModel() {
             loadingLiveData.value = true
             jokeList.addAll(getNextJokes())
             loadingLiveData.value = false
-            if (jokeLiveData.value == null && index <= jokeList.lastIndex) jokeLiveData.value = jokeList[index]
+            val currentJoke = jokeLiveData.value
+            if ((currentJoke == null || currentJoke.id.isEmpty()) && index <= jokeList.lastIndex) jokeLiveData.value = jokeList[index]
             return true
         }
 
@@ -160,7 +161,7 @@ class JokeViewModel : ViewModel() {
         }
     }
 
-    fun isFirstJoke(jokeUiData: JokeUiData) = jokeUiData == jokeList.first()
+    fun isFirstJoke(jokeUiData: JokeUiData) = jokeList.isEmpty() || jokeUiData == jokeList.first()
 
-    fun isLastJoke(jokeUiData: JokeUiData) = jokeUiData == jokeList.last()
+    fun isLastJoke(jokeUiData: JokeUiData) = jokeList.isEmpty() || jokeUiData == jokeList.last()
 }
