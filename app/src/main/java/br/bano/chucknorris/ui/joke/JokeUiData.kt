@@ -20,6 +20,10 @@ class JokeUiData(
         return id.hashCode()
     }
 
+    override fun toString(): String {
+        return "JokeUiData(category=$category, joke='$joke')"
+    }
+
     companion object {
         const val ICON_URL = "https://assets.chucknorris.host/img/chucknorris_logo_coloured_small@2x.png"
     }

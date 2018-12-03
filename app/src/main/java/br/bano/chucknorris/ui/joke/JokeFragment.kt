@@ -113,11 +113,13 @@ class JokeFragment : Fragment() {
             return
         }
         adapter.remove(categoryFilter)
+        viewModel.removeCategoryFilter(categoryFilter.value)
     }
 
     private fun addCategoryFilter(category: String) {
         val adapter = binding.categoryFilterRecycler.adapter as CategoryFilterAdapter
         adapter.setItemAtIndex(0, CategoryFilterAdapter.CategoryFilterItem(category))
+        viewModel.addCategoryFilter(category)
     }
 
     companion object {

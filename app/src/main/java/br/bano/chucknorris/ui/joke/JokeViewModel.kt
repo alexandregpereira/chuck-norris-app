@@ -4,20 +4,33 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import br.bano.chucknorris.data.joke.Joke
 import br.bano.chucknorris.data.joke.JokeRemote
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.util.*
 
 class JokeViewModel : ViewModel() {
 
+    private val unknownCategory = "unknown"
+    private val rangeCallTotal = 3
+
     private val jokeRemote = JokeRemote()
+
     val jokeLiveData = MutableLiveData<JokeUiData>()
     val loadingLiveData = MutableLiveData<Boolean>()
     val categoriesLiveData = MutableLiveData<List<String>>()
+    val categoriesLoadingLiveData = MutableLiveData<Boolean>()
+
     private var index = 0
     private val jokeList = mutableListOf<JokeUiData>()
+    private var categoryIndex = 0
+    private val categoriesFiltered = mutableListOf(unknownCategory)
 
-    private val rangeCallTotal = 4
-
-    fun loadJoke(category: String? = null, previousJoke: Boolean = false) = CoroutineScope(Dispatchers.Main).launch {
+    fun loadJoke(previousJoke: Boolean = false) = CoroutineScope(Dispatchers.Main).launch {
         if (previousJoke) {
             if (index == 0) return@launch
             --index
@@ -25,44 +38,125 @@ class JokeViewModel : ViewModel() {
             return@launch
         }
 
-        if (index == jokeList.size - 1) return@launch
-
-        if (!jokeList.isEmpty()) ++index
-
-        if (index > jokeList.size - 3) {
-            if (jokeList.size > index) jokeLiveData.value = jokeList[index]
-            loadingLiveData.value = true
-            jokeList.addAll(loadNextJokes(category))
-            loadingLiveData.value = false
-            if (jokeList.size == rangeCallTotal + 1) jokeLiveData.value = jokeList[index]
-            return@launch
+        if (categoriesLoadingLiveData.value == false && categoriesLiveData.value.isNullOrEmpty()) {
+            loadCategories()
         }
 
-        jokeLiveData.value = jokeList[index]
+        if (!jokeList.isEmpty() && index < jokeList.lastIndex) ++index
+
+        if (jokeList.size > index) jokeLiveData.value = jokeList[index]
+
+        loadNextJokes()
     }
 
     fun loadCategories() = CoroutineScope(Dispatchers.Main).launch {
         if (categoriesLiveData.value != null) return@launch
 
-        val categories = ArrayList(jokeRemote.getCategories().await())
-        categories.add(0, "unknown")
-        categoriesLiveData.value = categories
+        categoriesLiveData.value = try {
+            categoriesLoadingLiveData.value = true
+            val categories = ArrayList(jokeRemote.getCategories().await())
+            categories.add(0, unknownCategory)
+            categories
+        } catch (ex: Exception) {
+            when(ex) {
+                is UnknownHostException, is SocketTimeoutException, is ConnectException-> {
+                    null
+                }
+                else -> throw ex
+            }
+        } finally {
+            categoriesLoadingLiveData.value = false
+        }
     }
 
-    private suspend fun loadNextJokes(category: String? = null): List<JokeUiData> {
+    private suspend fun loadNextJokes(): Boolean {
+        if (index > jokeList.size - 1) {
+            loadingLiveData.value = true
+            jokeList.addAll(getNextJokes())
+            loadingLiveData.value = false
+            if (jokeLiveData.value == null && index <= jokeList.lastIndex) jokeLiveData.value = jokeList[index]
+            return true
+        }
+
+        return false
+    }
+
+    private suspend fun getNextJokes(): List<JokeUiData> {
         val jokes = mutableListOf<Deferred<Joke>>()
-        for (i in 0..rangeCallTotal) jokes.add(jokeRemote.getJoke(category))
-        return jokes.awaitAll().map { getJokeUiData(it) }
+        for (i in 0..rangeCallTotal) jokes.add(jokeRemote.getJoke(getNextCategory()))
+        return jokes.map {
+            try {
+                it.await()
+            } catch (ex: Exception) {
+                when(ex) {
+                    is UnknownHostException, is SocketTimeoutException, is ConnectException -> {
+                        Joke()
+                    }
+                    else -> throw ex
+                }
+            }
+        }.filter { it.id != null }.map { joke -> getJokeUiData(joke) }
     }
 
-    private suspend fun getJokeUiData(joke: Joke): JokeUiData = withContext(Dispatchers.IO) {
+    private fun getNextCategory(): String? {
+        ++categoryIndex
+        if (categoryIndex >= categoriesFiltered.size) categoryIndex = 0
+        val category = categoriesFiltered[categoryIndex]
+        return if (category == unknownCategory) null else category
+    }
+
+    private fun getJokeUiData(joke: Joke): JokeUiData {
         val categories = joke.category
         val value = joke.value
 
-        JokeUiData(
+        return JokeUiData(
             joke.id ?: "",
             if (value != null) "\" $value" else "",
-            categories?.joinToString()
+            categories?.joinToString() ?: unknownCategory
         )
+    }
+
+    private fun changeCategoryFilter(changeCategoriesFiltered: () -> Boolean) {
+        if (!changeCategoriesFiltered()) return
+
+        val currentJoke = jokeLiveData.value ?: return
+
+        val newJokeList = jokeList.filter { categoriesFiltered.contains(it.category) }
+        jokeList.clear()
+        jokeList.addAll(newJokeList)
+
+        this.index = if (jokeList.contains(currentJoke)) jokeList.indexOf(currentJoke) else 0
+
+        when {
+            jokeList.isNotEmpty() -> jokeLiveData.value = jokeList[index]
+            else -> jokeLiveData.value = JokeUiData("", "", null)
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            loadNextJokes()
+        }
+    }
+
+    fun addCategoryFilter(category: String) {
+        changeCategoryFilter {
+            val index = categoriesFiltered.indexOf(category)
+            if (index == 0) return@changeCategoryFilter false
+
+            if (index < 0) {
+                categoriesFiltered.add(0, category)
+            } else if (index != 0) {
+                categoriesFiltered.removeAt(index)
+                categoriesFiltered.add(0, category)
+            }
+
+            true
+        }
+    }
+
+    fun removeCategoryFilter(category: String) {
+        changeCategoryFilter {
+            categoriesFiltered.remove(category)
+            true
+        }
     }
 }
