@@ -17,7 +17,9 @@ import br.bano.chucknorris.databinding.CategoriesDialogBinding
 import br.bano.chucknorris.databinding.JokeFragmentBinding
 import br.bano.chucknorris.ui.joke.CategoryFilterAdapter.Companion.ADD_ID
 import br.bano.chucknorris.utils.createDialog
+import br.bano.chucknorris.utils.gone
 import br.bano.chucknorris.utils.loadImageUrl
+import br.bano.chucknorris.utils.visible
 
 class JokeFragment : Fragment() {
 
@@ -57,17 +59,27 @@ class JokeFragment : Fragment() {
             buildCategoryRecyclerView(categoryFilterRecycler, categories)
         })
 
-        val animation = AnimationUtils.loadAnimation(context, R.anim.next)
+        viewModel.categoriesLoadingLiveData.observe(this@JokeFragment, Observer {  loading ->
+            if (loading == null) return@Observer
+            checkProgressVisibility()
+        })
+
         viewModel.loadingLiveData.observe(this@JokeFragment, Observer { loading ->
             if (loading == null) return@Observer
-            if (loading) nextButton.startAnimation(animation)
-            else nextButton.clearAnimation()
 
+            checkProgressVisibility()
             checkButtonsVisibilityByJokePosition(viewModel.jokeLiveData.value)
         })
 
         viewModel.loadCategories()
         viewModel.loadJoke()
+    }
+
+    private fun checkProgressVisibility() {
+        val categoriesLoading = viewModel.categoriesLoadingLiveData.value ?: false
+        val jokesLoading = viewModel.loadingLiveData.value ?: false
+        if (categoriesLoading || jokesLoading) binding.progress.visible()
+        else binding.progress.gone()
     }
 
     private fun checkButtonsVisibilityByJokePosition(joke: JokeUiData?) = binding.apply {
