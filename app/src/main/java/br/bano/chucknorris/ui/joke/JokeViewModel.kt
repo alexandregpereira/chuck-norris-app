@@ -159,4 +159,8 @@ class JokeViewModel : ViewModel() {
             true
         }
     }
+
+    fun isFirstJoke(jokeUiData: JokeUiData) = jokeUiData == jokeList.first()
+
+    fun isLastJoke(jokeUiData: JokeUiData) = jokeUiData == jokeList.last()
 }

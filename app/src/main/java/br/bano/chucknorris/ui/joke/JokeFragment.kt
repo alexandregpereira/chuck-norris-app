@@ -43,10 +43,13 @@ class JokeFragment : Fragment() {
         previousButton.setOnClickListener { viewModel.loadJoke(previousJoke = true) }
 
         logoImage.loadImageUrl(JokeUiData.ICON_URL)
+        previousButton.isEnabled = false
+        nextButton.isEnabled = false
 
         viewModel.jokeLiveData.observe(this@JokeFragment, Observer { joke ->
             if (joke == null) return@Observer
             jokeUi = joke
+            checkButtonsVisibilityByJokePosition(joke)
         })
 
         viewModel.categoriesLiveData.observe(this@JokeFragment, Observer { categories ->
@@ -59,10 +62,18 @@ class JokeFragment : Fragment() {
             if (loading == null) return@Observer
             if (loading) nextButton.startAnimation(animation)
             else nextButton.clearAnimation()
+
+            checkButtonsVisibilityByJokePosition(viewModel.jokeLiveData.value)
         })
 
         viewModel.loadCategories()
         viewModel.loadJoke()
+    }
+
+    private fun checkButtonsVisibilityByJokePosition(joke: JokeUiData?) = binding.apply {
+        if (joke == null) return@apply
+        previousButton.isEnabled = !viewModel.isFirstJoke(joke)
+        nextButton.isEnabled = !viewModel.isLastJoke(joke)
     }
 
     private fun buildCategoryRecyclerView(categoryFilterRecycler: RecyclerView, categories: List<String>) = categoryFilterRecycler.apply {

@@ -11,7 +11,7 @@
 
     <style name="Button" parent="Widget.AppCompat.Button">
         <item name="android:background">@drawable/button_selector</item>
-        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textColor">@color/button_text_selector</item>
     </style>
 
 </resources>
