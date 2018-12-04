@@ -4,21 +4,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import br.bano.chucknorris.data.joke.Joke
 import br.bano.chucknorris.data.joke.JokeRemote
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.*
 
-class JokeViewModel : ViewModel() {
+open class JokeViewModel : ViewModel() {
 
     private val unknownCategory = "unknown"
     private val rangeCallTotal = 4
 
-    private val jokeRemote = JokeRemote()
+    protected open val jokeRemote = JokeRemote()
 
     val jokeLiveData = MutableLiveData<JokeUiData>()
     val loadingLiveData = MutableLiveData<Boolean>()
@@ -30,12 +27,12 @@ class JokeViewModel : ViewModel() {
     private var categoryIndex = 0
     private val categoriesFiltered = mutableListOf(unknownCategory)
 
-    fun loadJoke(previousJoke: Boolean = false) = CoroutineScope(Dispatchers.Main).launch {
+    fun loadJoke(previousJoke: Boolean = false) = getCoroutineScopeMain loadJokeLabel@ {
         if (previousJoke) {
-            if (index == 0) return@launch
+            if (index == 0) return@loadJokeLabel
             --index
             jokeLiveData.value = jokeList[index]
-            return@launch
+            return@loadJokeLabel
         }
 
         if (categoriesLoadingLiveData.value == false && categoriesLiveData.value.isNullOrEmpty()) {
@@ -49,8 +46,8 @@ class JokeViewModel : ViewModel() {
         loadNextJokes()
     }
 
-    fun loadCategories() = CoroutineScope(Dispatchers.Main).launch {
-        if (categoriesLiveData.value != null) return@launch
+    fun loadCategories() = getCoroutineScopeMain {
+        if (categoriesLiveData.value != null) return@getCoroutineScopeMain
 
         categoriesLiveData.value = try {
             categoriesLoadingLiveData.value = true
@@ -106,7 +103,7 @@ class JokeViewModel : ViewModel() {
         }.filter { it.id != null }.map { joke -> getJokeUiData(joke) }
     }
 
-    private fun getNextCategory(): String? {
+    protected fun getNextCategory(): String? {
         ++categoryIndex
         if (categoryIndex >= categoriesFiltered.size) categoryIndex = 0
         val category = categoriesFiltered[categoryIndex]
@@ -140,7 +137,7 @@ class JokeViewModel : ViewModel() {
             else -> jokeLiveData.value = JokeUiData("", "", null)
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
+        getCoroutineScopeMain {
             loadNextJokes()
         }
     }
@@ -171,4 +168,6 @@ class JokeViewModel : ViewModel() {
     fun isFirstJoke(jokeUiData: JokeUiData) = jokeList.isEmpty() || jokeUiData == jokeList.first()
 
     fun isLastJoke(jokeUiData: JokeUiData) = jokeList.isEmpty() || jokeUiData == jokeList.last()
+
+    protected open fun getCoroutineScopeMain(block: suspend CoroutineScope.() -> Unit): Job = CoroutineScope(Dispatchers.Main).launch(block = block)
 }
