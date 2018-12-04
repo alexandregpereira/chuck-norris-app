@@ -73,6 +73,13 @@ class JokeViewModel : ViewModel() {
         if (index >= jokeList.size - 2) {
             loadingLiveData.value = true
             jokeList.addAll(getNextJokes())
+
+            val distinctList = jokeList.distinct()
+            if (distinctList.size != jokeList.size) {
+                jokeList.clear()
+                jokeList.addAll(distinctList)
+            }
+
             loadingLiveData.value = false
             val currentJoke = jokeLiveData.value
             if ((currentJoke == null || currentJoke.id.isEmpty()) && index <= jokeList.lastIndex) jokeLiveData.value = jokeList[index]
