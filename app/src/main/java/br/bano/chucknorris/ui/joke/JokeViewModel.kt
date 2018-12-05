@@ -10,6 +10,7 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.*
 
+@Suppress("MemberVisibilityCanBePrivate")
 open class JokeViewModel : ViewModel() {
 
     private val unknownCategory = "unknown"
@@ -22,12 +23,12 @@ open class JokeViewModel : ViewModel() {
     val categoriesLiveData = MutableLiveData<List<String>>()
     val categoriesLoadingLiveData = MutableLiveData<Boolean>()
 
-    private var index = 0
-    private val jokeList = mutableListOf<JokeUiData>()
-    private var categoryIndex = 0
-    private val categoriesFiltered = mutableListOf(unknownCategory)
+    protected var index = 0
+    protected val jokeList = mutableListOf<JokeUiData>()
+    protected var categoryIndex = 0
+    protected val categoriesFiltered = mutableListOf(unknownCategory)
 
-    fun loadJoke(previousJoke: Boolean = false) = getCoroutineScopeMain loadJokeLabel@ {
+    fun loadJoke(previousJoke: Boolean = false) = getCoroutineScopeMain loadJokeLabel@{
         if (previousJoke) {
             if (index == 0) return@loadJokeLabel
             --index
@@ -55,8 +56,8 @@ open class JokeViewModel : ViewModel() {
             categories.add(0, unknownCategory)
             categories
         } catch (ex: Exception) {
-            when(ex) {
-                is UnknownHostException, is SocketTimeoutException, is ConnectException-> {
+            when (ex) {
+                is UnknownHostException, is SocketTimeoutException, is ConnectException -> {
                     null
                 }
                 else -> throw ex
@@ -79,7 +80,8 @@ open class JokeViewModel : ViewModel() {
 
             loadingLiveData.value = false
             val currentJoke = jokeLiveData.value
-            if ((currentJoke == null || currentJoke.id.isEmpty()) && index <= jokeList.lastIndex) jokeLiveData.value = jokeList[index]
+            if ((currentJoke == null || currentJoke.id.isEmpty()) && index <= jokeList.lastIndex) jokeLiveData.value =
+                    jokeList[index]
             return true
         }
 
@@ -93,7 +95,7 @@ open class JokeViewModel : ViewModel() {
             try {
                 it.await()
             } catch (ex: Exception) {
-                when(ex) {
+                when (ex) {
                     is UnknownHostException, is SocketTimeoutException, is ConnectException -> {
                         Joke()
                     }
@@ -104,9 +106,8 @@ open class JokeViewModel : ViewModel() {
     }
 
     protected fun getNextCategory(): String? {
-        ++categoryIndex
         if (categoryIndex >= categoriesFiltered.size) categoryIndex = 0
-        val category = categoriesFiltered[categoryIndex]
+        val category = categoriesFiltered[categoryIndex++]
         return if (category == unknownCategory) null else category
     }
 
@@ -124,17 +125,18 @@ open class JokeViewModel : ViewModel() {
     private fun changeCategoryFilter(changeCategoriesFiltered: () -> Boolean) {
         if (!changeCategoriesFiltered()) return
 
-        val currentJoke = jokeLiveData.value ?: return
+        val currentJoke = jokeLiveData.value
+        if (currentJoke != null) {
+            val newJokeList = jokeList.filter { categoriesFiltered.contains(it.category) }
+            jokeList.clear()
+            jokeList.addAll(newJokeList)
 
-        val newJokeList = jokeList.filter { categoriesFiltered.contains(it.category) }
-        jokeList.clear()
-        jokeList.addAll(newJokeList)
+            this.index = if (jokeList.contains(currentJoke)) jokeList.indexOf(currentJoke) else 0
 
-        this.index = if (jokeList.contains(currentJoke)) jokeList.indexOf(currentJoke) else 0
-
-        when {
-            jokeList.isNotEmpty() -> jokeLiveData.value = jokeList[index]
-            else -> jokeLiveData.value = JokeUiData("", "", null)
+            when {
+                jokeList.isNotEmpty() -> jokeLiveData.value = jokeList[index]
+                else -> jokeLiveData.value = JokeUiData("", "", null)
+            }
         }
 
         getCoroutineScopeMain {
@@ -147,6 +149,7 @@ open class JokeViewModel : ViewModel() {
             val index = categoriesFiltered.indexOf(category)
             if (index == 0) return@changeCategoryFilter false
 
+            categoryIndex = 0
             if (index < 0) {
                 categoriesFiltered.add(0, category)
             } else if (index != 0) {
@@ -159,6 +162,7 @@ open class JokeViewModel : ViewModel() {
     }
 
     fun removeCategoryFilter(category: String) {
+        if (categoriesFiltered.size == 1) return
         changeCategoryFilter {
             categoriesFiltered.remove(category)
             true
@@ -169,5 +173,6 @@ open class JokeViewModel : ViewModel() {
 
     fun isLastJoke(jokeUiData: JokeUiData) = jokeList.isEmpty() || jokeUiData == jokeList.last()
 
-    protected open fun getCoroutineScopeMain(block: suspend CoroutineScope.() -> Unit): Job = CoroutineScope(Dispatchers.Main).launch(block = block)
+    protected open fun getCoroutineScopeMain(block: suspend CoroutineScope.() -> Unit): Job =
+        CoroutineScope(Dispatchers.Main).launch(block = block)
 }
