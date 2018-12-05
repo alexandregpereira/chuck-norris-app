@@ -7,14 +7,15 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class JokeRemote {
+open class JokeRemote {
 
-    private val service = Retrofit.Builder()
+    private val service by lazy { Retrofit.Builder()
         .baseUrl("https://api.chucknorris.io")
         .addCallAdapterFactory(CoroutineCallAdapterFactory())
         .addConverterFactory(GsonConverterFactory.create())
         .client(buildClient())
         .build().create<JokeApi>(JokeApi::class.java)
+    }
 
     private fun buildClient(): OkHttpClient {
         val httpClient = OkHttpClient.Builder()
@@ -24,11 +25,11 @@ class JokeRemote {
         return httpClient.build()
     }
 
-    fun getJoke(category: String?): Deferred<Joke> {
+    open fun getJoke(category: String?): Deferred<Joke> {
         return service.getJoke(category)
     }
 
-    fun getCategories(): Deferred<List<String>> {
+    open fun getCategories(): Deferred<List<String>> {
         return service.getCategories()
     }
 }
