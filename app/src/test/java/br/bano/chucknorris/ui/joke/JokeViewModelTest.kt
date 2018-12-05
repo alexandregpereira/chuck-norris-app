@@ -1,33 +1,24 @@
 package br.bano.chucknorris.ui.joke
 
-import br.bano.chucknorris.data.joke.Joke
 import br.bano.chucknorris.data.joke.JokeRemote
-import kotlinx.coroutines.*
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.mock
-import java.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 
 class JokeViewModelTest(categories: List<String>? = null) : JokeViewModel() {
 
-    override val jokeRemote: JokeRemote = mock(JokeRemote::class.java)
-
-    init {
-        val joke = Joke()
-        joke.id = UUID.randomUUID().toString()
-        joke.value = joke.id
-        val deferred = CompletableDeferred(joke)
-        `when`(jokeRemote.getJoke(getNextCategory())).thenReturn(deferred)
-
-        if (categories != null) {
-            val categoriesDeferred = CompletableDeferred(categories)
-            `when`(jokeRemote.getCategories()).thenReturn(categoriesDeferred)
-        }
-    }
+    override val jokeRemote: JokeRemote = JokeRemoteMock(categories)
 
     override fun getCoroutineScopeMain(block: suspend CoroutineScope.() -> Unit): Job {
         return runBlocking {
             this.launch(block = block)
         }
     }
+
+    fun getCategoriesFilteredTest() = categoriesFiltered
+    fun getJokeListTest() = jokeList
+    fun getJokeIndex() = index
+    fun getCategoryIndexTest() = categoryIndex
 }
